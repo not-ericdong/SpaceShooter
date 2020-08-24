@@ -1,0 +1,20 @@
+todo~~~~~~~
+
+
+
+score - DONE
+
+fix projectile being destroyed when ship is destroyed - DONE
+
+add bone power up that does???? maybe make you shoot faster or more bullets
+	spawns randomly each level but theres a counter
+	if counter = 4 then 100% spawn this lvl
+
+main menu controls page - add a play button then
+
+add lives that spawns randomly each level but has a counter as well - fully heals you
+
+make ships spawn in two diff sizes - DONE
+
+
+
