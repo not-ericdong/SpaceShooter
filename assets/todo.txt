@@ -6,15 +6,47 @@ score - DONE
 
 fix projectile being destroyed when ship is destroyed - DONE
 
+main menu controls page - add a play button then
+
 add bone power up that does???? maybe make you shoot faster or more bullets
 	spawns randomly each level but theres a counter
 	if counter = 4 then 100% spawn this lvl
 
-main menu controls page - add a play button then
 
 add lives that spawns randomly each level but has a counter as well - fully heals you
 
+add bomb powerup and bomb UI
+
+shield power up
+
+
+
+
 make ships spawn in two diff sizes - DONE
 
+maybe make lives tank a hit for you instead of dying at low health
+
+maybe make lives UI hearts instead of numbers
+
+scrolling background - done
+
+boss fight
+
+FIX AMMO
 
 
+
+
+
+powerups
+-once a new level starts 25% chance to spawn or smthn
+-have a counter, if counter reaches N then 100% spawn rate
+-spawn powerup amonst ships
+-create class that takes x, y, which_power, powerimg
+	class should have move method similar to projectile
+	collision detection
+	powerup methods?
+
+
+
+         

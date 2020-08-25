@@ -14,28 +14,31 @@ pygame.display.set_caption("APOLLO ADVENTURE")
 assets = os.path.dirname(__file__)
 bg_filename = os.path.join(assets, 'background.jpg')
 
-space = Image.new("RGB", (WIDTH, HEIGHT), "black")
-d = ImageDraw.Draw(space)
 
-star_number = random.randrange(200, 250, 5)
-colour_list = ["#4291E5", "#70ABE9", "#B8D3EF",
-               "#FEF8EC", "#FDE4B2", "#E9C57D", "#F5AC1B"]
+def create_background():
+    space = Image.new("RGB", (WIDTH, HEIGHT+10), "black")
+    d = ImageDraw.Draw(space)
 
-# stars can be though of as 5 squares of equal size organized into a cross
-# offset is how far away from origin (top left corner)
-for x in range(star_number):
-    offsetx = random.randrange(0, WIDTH, 1)
-    offsety = random.randrange(0, HEIGHT, 1)
-    colour = random.choices(colour_list, weights=(3, 3, 5, 3, 2, 2, 6))[0]
-    # more accurate weight distribution: weights=(0.0000003, 0.0013, 0.006, 0.03, 0.076, 0.121, 0.7645)
-    size = random.randrange(1, 3, 1)
+    star_number = random.randrange(100, 260, 10)
+    colour_list = ["#4291E5", "#70ABE9", "#B8D3EF",
+                   "#FEF8EC", "#FDE4B2", "#E9C57D", "#F5AC1B"]
 
-    if space.getpixel((offsetx, offsety)) is not (0, 0, 0):
-        star_x = d.rectangle([offsetx, size + offsety,
-                              3 * size + offsetx, 2 * size + offsety], fill=colour)
-        star_y = d.rectangle([size + offsetx, offsety,
-                              2 * size + offsetx, 3 * size + offsety], fill=colour)
-space.save(bg_filename)
+    # stars can be though of as 5 squares of equal size organized into a cross
+    # offset is how far away from origin (top left corner)
+    for x in range(star_number):
+        offsetx = random.randrange(0, WIDTH)
+        offsety = random.randrange(0, HEIGHT)
+        colour = random.choices(colour_list, weights=(3, 3, 5, 3, 2, 2, 6))[0]
+        # more accurate weight distribution: weights=(0.0000003, 0.0013, 0.006, 0.03, 0.076, 0.121, 0.7645)
+        size = random.randrange(1, 3)
+
+        if space.getpixel((offsetx, offsety)) is not (0, 0, 0):
+            star_x = d.rectangle([offsetx, size + offsety,
+                                  3 * size + offsetx, 2 * size + offsety], fill=colour)
+            star_y = d.rectangle([size + offsetx, offsety,
+                                  2 * size + offsetx, 3 * size + offsety], fill=colour)
+    space.save(bg_filename)
+create_background()
 
 # Load the images
 SPACESHIP = pygame.image.load(os.path.join(assets, "spaceship_s.png"))
@@ -51,10 +54,14 @@ UFO4_S = pygame.image.load(os.path.join(assets, "ufo_orange_s.png"))
 PROJECTILE = pygame.image.load(os.path.join(assets, "tennis_ball_s.png"))
 PROJECTILE_BAD_S = pygame.image.load(os.path.join(assets, "tennis_ball_red_s.png"))
 PROJECTILE_BAD = pygame.image.load(os.path.join(assets, "tennis_ball_red.png"))
+
 POWERUP_BONE = pygame.image.load(os.path.join(assets, "bone.png"))
 POWERUP_HEART = pygame.image.load(os.path.join(assets, "heart.png"))
+POWERUP_BOMB = pygame.image.load(os.path.join(assets, "bomb.png"))
+POWERUP_SHIELD = pygame.image.load(os.path.join(assets, "shield.png"))
+
 EMPTY = pygame.image.load(os.path.join(assets, "empty.png"))
-BACKGROUND = pygame.image.load(os.path.join(assets, "background.jpg"))
+BACKGROUND = pygame.image.load(bg_filename)
 
 
 class Projectile:
@@ -71,7 +78,7 @@ class Projectile:
         self.y += speed
 
     def offscreen(self, height):
-        return not (height >= self.y >= 0)
+        return not (height >= self.y >= 0) # todo sometimes spawning balls get glitched at top
 
     def collision(self, obj):
         return collide(self, obj)
@@ -86,10 +93,9 @@ def collide(obj1, obj2):
 class Ship:
     COOLDOWN = 30
 
-    def __init__(self, x, y, health=50):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.health = health
         self.ship_img = None
         self.projectile_img = None
         self.projectiles = []
@@ -131,8 +137,9 @@ class Ship:
 
 
 class Player1(Ship):
-    def __init__(self, x, y, health=30):
-        super().__init__(x, y, health)
+    def __init__(self, x, y, health=40):
+        super().__init__(x, y)
+        self.health = health
         self.ship_img = SPACESHIP
         self.projectile_img = PROJECTILE
         self.mask = pygame.mask.from_surface(self.ship_img)
@@ -178,8 +185,8 @@ class EnemyShip(Ship):
                     "pink_s": (UFO2_S, PROJECTILE_BAD_S)
                     }
 
-    def __init__(self, x, y, colour, health=50):
-        super().__init__(x, y, health)
+    def __init__(self, x, y, colour):
+        super().__init__(x, y)
         self.ship_img, self. projectile_img = self.colour_picker[colour]
         self.mask = pygame.mask.from_surface(self.ship_img)
 
@@ -196,8 +203,47 @@ class EnemyShip(Ship):
 
 class PowerUP(Projectile):
     def __init__(self, x, y, img):
-        super().__init__(x, y, img)
+        self.x = x
+        self.y = y
+        self.img = img
         self.mask = pygame.mask.from_surface(self.img)
+        self.power_up_list = []
+
+    def spawn_power(self):
+        self.power_up_list.append(self)
+
+    def offscreen(self, height):
+        return not (height >= self.y)
+
+
+class Queue:
+    def __init__(self):
+        self.items = []
+
+    def enqueue(self, item):
+        self.items.insert(0, item)
+
+    def dequeue(self):
+        return self.items.pop()
+
+    def empty(self):
+        return not bool(self.items)
+
+    def size(self):
+        return len(self.items)
+
+
+class Background:
+    def __init__(self, y, bg, x=0):
+        self.x = x
+        self.y = y
+        self.bg = bg
+
+    def draw(self, window):
+        window.blit(self.bg, (self.x, self.y))
+
+    def move(self):
+        self.y += 1
 
 
 def main():
@@ -217,21 +263,27 @@ def main():
     score = player.score
     proj_speed = 10
     proj_speed_bad = min(5 + level, 15)
-    powerup_speed = 7
+    powerup_speed = 4
     powerup_counter1 = 0
+    power_list = []
 
     enemy_list = []
-    wave_length = 5
-    enemy_speed = 1
+    wave_length = 3
+    enemy_speed = 1.5
     dead_enemy_speed = proj_speed_bad - 1
+    moving_background = Background(-10, BACKGROUND)
+    moving_background2 = Background(-HEIGHT-10, BACKGROUND)
 
     def redraw_window():
-        WINDOW.blit(BACKGROUND, (0, 0))
+        moving_background.draw(WINDOW)
+        moving_background2.draw(WINDOW)
 
         # Ships
         player.draw(WINDOW)
         for enemy in enemy_list:
             enemy.draw(WINDOW)
+        for item in power_list:
+            item.draw(WINDOW)
 
         # UI
         level_display = main_font.render(f"Level: {level}", 1, (255, 255, 255))
@@ -241,7 +293,7 @@ def main():
         WINDOW.blit(score_display, (20, HEIGHT - 50))
         WINDOW.blit(level_display, (WIDTH - level_display.get_width() - 20, 20))
         if lost:
-            time.sleep(0.5)
+            #time.sleep(0.5)
             WINDOW.blit(BACKGROUND, (0, 0))
             lost_title = lost_font.render('YOU LOSE', 1, (255, 255, 255))
             WINDOW.blit(lost_title, (WIDTH / 2 - lost_title.get_width() / 2,
@@ -257,11 +309,24 @@ def main():
         redraw_window()
         score = player.score
 
+        moving_background.move()
+        moving_background2.move()
+        # there is two background imgs of height HEIGHT+10, both imgs move down
+        # the +10 is band of black pixels to ensure smooth transition from one img to the next
+        # if top of img hit top of game window
+        # then make img below = img above, create new img above
+        # since both imgs always move down another img above will hit top of game window - repeat
+        if moving_background2.y >= 0:
+            moving_background = moving_background2
+            create_background()
+            moving_background2 = Background(-HEIGHT - 10, BACKGROUND)
+
+
         if lives <= 0 or player.health <= 0:
             lost = True
             lost_count += 1
         if lost:
-            if lost_count > fps*3:
+            if lost_count > fps*2:
                 run = False
             else:
                 continue
@@ -288,14 +353,46 @@ def main():
         # ship spawning - balance at the end
         if len(enemy_list) == 0:
             level += 1
-            wave_length += 5
+            wave_length += 2
             for n in range(wave_length):
                 enemy = EnemyShip(random.randrange(10, WIDTH - 200),
-                                  random.randrange(-1000, -100),
+                                  random.randrange(-500, -100),
                                   random.choice(["purple", "blue", "pink", "orange",
                                                  "purple_s", "blue_s", "pink_s", "orange_s"])
                                   )
                 enemy_list.append(enemy)
+
+            # powerup spawning
+            if random.randrange(0, 2) == 0 or powerup_counter1 == 0:
+            #if level == 2 or powerup_counter1 == 3:
+                powerup_counter1 = 0
+                power_maker = PowerUP(random.randrange(10, WIDTH - 50),
+                                      random.randrange(-500, -100),
+                                      random.choice([POWERUP_HEART, POWERUP_BONE,
+                                                     POWERUP_BOMB, POWERUP_SHIELD])
+                                      )
+                power_list.append(power_maker)
+            else:
+                powerup_counter1 += 1
+
+            #health shouldnt spawn earlier
+
+        # powerup movement
+        for powerup in power_list:
+            powerup.move(powerup_speed)
+            if collide(powerup, player):
+                if powerup.img == POWERUP_HEART:
+                    player.health = 40
+                    lives += 1
+                if powerup.img == POWERUP_BONE:
+                    player.health = 40
+                if powerup.img == POWERUP_BOMB:
+                    player.health = 40
+                if powerup.img == POWERUP_SHIELD:
+                    player.health = 40
+                power_list.remove(powerup)
+            elif powerup.y + 50 > HEIGHT:
+                power_list.remove(powerup)
 
         # enemy behavior
         for enemy in enemy_list:
