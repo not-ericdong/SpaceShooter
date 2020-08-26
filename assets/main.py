@@ -52,6 +52,7 @@ UFO3_S = pygame.image.load(os.path.join(assets, "ufo_purple_s.png"))
 UFO4_S = pygame.image.load(os.path.join(assets, "ufo_orange_s.png"))
 
 PROJECTILE = pygame.image.load(os.path.join(assets, "tennis_ball_s.png"))
+PROJECTILE_BIG = pygame.image.load(os.path.join(assets, "tennis_ball.png"))
 PROJECTILE_BAD_S = pygame.image.load(os.path.join(assets, "tennis_ball_red_s.png"))
 PROJECTILE_BAD = pygame.image.load(os.path.join(assets, "tennis_ball_red.png"))
 
@@ -59,6 +60,7 @@ POWERUP_BONE = pygame.image.load(os.path.join(assets, "bone.png"))
 POWERUP_HEART = pygame.image.load(os.path.join(assets, "heart.png"))
 POWERUP_BOMB = pygame.image.load(os.path.join(assets, "bomb.png"))
 POWERUP_SHIELD = pygame.image.load(os.path.join(assets, "shield.png"))
+FORCEFIELD = pygame.image.load(os.path.join(assets, "force_field_small.png"))
 
 EMPTY = pygame.image.load(os.path.join(assets, "empty.png"))
 BACKGROUND = pygame.image.load(bg_filename)
@@ -72,13 +74,20 @@ class Projectile:
         self.mask = pygame.mask.from_surface(self.img)
 
     def draw(self, window):
-        window.blit(self.img, (self.x, self.y))
+        window.blit(self.img, (self.x - (self.get_width()/2),
+                               self.y))
 
     def move(self, speed):
         self.y += speed
 
     def offscreen(self, height):
-        return not (height >= self.y >= 0) # todo sometimes spawning balls get glitched at top
+        return not (height >= self.y >= 0)  # todo sometimes spawning balls get glitched at top
+
+    def get_width(self):
+        return self.img.get_width()
+
+    def get_height(self):
+        return self.img.get_height()
 
     def collision(self, obj):
         return collide(self, obj)
@@ -100,6 +109,7 @@ class Ship:
         self.projectile_img = None
         self.projectiles = []
         self.cool_down = 0
+        self.bone_count = 1
 
     def draw(self, window):
         window.blit(self.ship_img, (self.x, self.y))
@@ -113,18 +123,21 @@ class Ship:
             if projectile.offscreen(HEIGHT):
                 self.projectiles.remove(projectile)
             elif projectile.collision(obj):
-                obj.health -= 10
+                if obj.shield_health > 0:
+                    obj.shield_health -= 10
+                else:
+                    obj.health -= 10
                 self.projectiles.remove(projectile)
 
     def cooldown(self):
         if self.cool_down >= self.COOLDOWN:
             self.cool_down = 0
         elif self.cool_down > 0:
-            self.cool_down += 1
+            self.cool_down += min(1 * self.bone_count, 4)
 
     def shoot(self):
         if self.cool_down == 0:
-            projectile = Projectile(self.x + self.get_width()/2,  # need to subtract the width of the projectile
+            projectile = Projectile(self.x + self.get_width()/2,
                                     self.y, self.projectile_img)
             self.projectiles.append(projectile)
             self.cool_down = 1
@@ -140,11 +153,22 @@ class Player1(Ship):
     def __init__(self, x, y, health=40):
         super().__init__(x, y)
         self.health = health
+        self.max_health = health
         self.ship_img = SPACESHIP
         self.projectile_img = PROJECTILE
         self.mask = pygame.mask.from_surface(self.ship_img)
-        self.max_health = health
+        self.shield_img = FORCEFIELD
+        self.shield_health = 0
         self.score = 0
+
+    def shield(self):
+        self.shield_health = 19
+        self.ship_img = FORCEFIELD
+        self.mask = pygame.mask.from_surface(self.shield_img)
+
+    def deshield(self):
+        self.ship_img = SPACESHIP
+        self.mask = pygame.mask.from_surface(self.ship_img)
 
     def projectile_movement(self, speed, ufos):
         self.cooldown()
@@ -195,7 +219,7 @@ class EnemyShip(Ship):
 
     def shoot(self):   # added child shoot method since projectiles for ufos shoot from under
         if self.cool_down == 0:
-            projectile = Projectile(self.x + self.get_width()/2 - 10,  # need to subtract the width of the projectile
+            projectile = Projectile(self.x + self.get_width()/2,
                                     self.y + self.get_height(), self.projectile_img)
             self.projectiles.append(projectile)
             self.cool_down = 1
@@ -203,9 +227,7 @@ class EnemyShip(Ship):
 
 class PowerUP(Projectile):
     def __init__(self, x, y, img):
-        self.x = x
-        self.y = y
-        self.img = img
+        super().__init__(x, y, img)
         self.mask = pygame.mask.from_surface(self.img)
         self.power_up_list = []
 
@@ -214,23 +236,6 @@ class PowerUP(Projectile):
 
     def offscreen(self, height):
         return not (height >= self.y)
-
-
-class Queue:
-    def __init__(self):
-        self.items = []
-
-    def enqueue(self, item):
-        self.items.insert(0, item)
-
-    def dequeue(self):
-        return self.items.pop()
-
-    def empty(self):
-        return not bool(self.items)
-
-    def size(self):
-        return len(self.items)
 
 
 class Background:
@@ -243,7 +248,7 @@ class Background:
         window.blit(self.bg, (self.x, self.y))
 
     def move(self):
-        self.y += 1
+        self.y += 0.3
 
 
 def main():
@@ -264,12 +269,14 @@ def main():
     proj_speed = 10
     proj_speed_bad = min(5 + level, 15)
     powerup_speed = 4
-    powerup_counter1 = 0
+    powerup_counter = 0
+    bomb_count = 1
+    bomb_cooldown = 0
     power_list = []
 
     enemy_list = []
-    wave_length = 3
-    enemy_speed = 1.5
+    wave_length = 0
+    enemy_speed = 1.8
     dead_enemy_speed = proj_speed_bad - 1
     moving_background = Background(-10, BACKGROUND)
     moving_background2 = Background(-HEIGHT-10, BACKGROUND)
@@ -280,8 +287,10 @@ def main():
 
         # Ships
         player.draw(WINDOW)
+
         for enemy in enemy_list:
             enemy.draw(WINDOW)
+
         for item in power_list:
             item.draw(WINDOW)
 
@@ -289,9 +298,11 @@ def main():
         level_display = main_font.render(f"Level: {level}", 1, (255, 255, 255))
         lives_display = main_font.render(f"Lives: {lives}", 1, (255, 255, 255))
         score_display = main_font.render(f"Score: {score}", 1, (255, 255, 255))
-        WINDOW.blit(lives_display, (20, 20))
-        WINDOW.blit(score_display, (20, HEIGHT - 50))
+        bomb_display = main_font.render(f"Bombs: {bomb_count}", 1, (255, 255, 255))
+        WINDOW.blit(score_display, (20, 20))
+        WINDOW.blit(lives_display, (20, HEIGHT - 50))
         WINDOW.blit(level_display, (WIDTH - level_display.get_width() - 20, 20))
+        WINDOW.blit(bomb_display, (WIDTH - bomb_display.get_width() - 20, HEIGHT - 50))
         if lost:
             #time.sleep(0.5)
             WINDOW.blit(BACKGROUND, (0, 0))
@@ -320,7 +331,6 @@ def main():
             moving_background = moving_background2
             create_background()
             moving_background2 = Background(-HEIGHT - 10, BACKGROUND)
-
 
         if lives <= 0 or player.health <= 0:
             lost = True
@@ -353,31 +363,33 @@ def main():
         # ship spawning - balance at the end
         if len(enemy_list) == 0:
             level += 1
-            wave_length += 2
+            wave_length += 3
             for n in range(wave_length):
                 enemy = EnemyShip(random.randrange(10, WIDTH - 200),
-                                  random.randrange(-500, -100),
+                                  random.randrange(-600, -100),
                                   random.choice(["purple", "blue", "pink", "orange",
                                                  "purple_s", "blue_s", "pink_s", "orange_s"])
                                   )
                 enemy_list.append(enemy)
 
             # powerup spawning
-            if random.randrange(0, 2) == 0 or powerup_counter1 == 0:
-            #if level == 2 or powerup_counter1 == 3:
-                powerup_counter1 = 0
+            if random.randrange(0, 2) == 0 or powerup_counter == 2:
+                powerup_counter = 0
                 power_maker = PowerUP(random.randrange(10, WIDTH - 50),
                                       random.randrange(-500, -100),
-                                      random.choice([POWERUP_HEART, POWERUP_BONE,
-                                                     POWERUP_BOMB, POWERUP_SHIELD])
+                                      random.choice([POWERUP_HEART,
+                                                     POWERUP_BONE,
+                                                     POWERUP_BOMB,
+                                                     POWERUP_SHIELD
+                                                    ])
                                       )
                 power_list.append(power_maker)
             else:
-                powerup_counter1 += 1
+                powerup_counter += 1
 
-            #health shouldnt spawn earlier
+            #health shouldnt spawn earlier???
 
-        # powerup movement
+        # powerup behavior
         for powerup in power_list:
             powerup.move(powerup_speed)
             if collide(powerup, player):
@@ -385,14 +397,40 @@ def main():
                     player.health = 40
                     lives += 1
                 if powerup.img == POWERUP_BONE:
-                    player.health = 40
+                    player.bone_count += 1
                 if powerup.img == POWERUP_BOMB:
-                    player.health = 40
+                    bomb_count += 1
                 if powerup.img == POWERUP_SHIELD:
-                    player.health = 40
+                    player.shield()
+
                 power_list.remove(powerup)
-            elif powerup.y + 50 > HEIGHT:
+            elif powerup.y > HEIGHT:
                 power_list.remove(powerup)
+        # bones
+            # 6+ stop spawning bones
+        if player.bone_count == 4:
+            player.projectile_img = PROJECTILE_BIG
+        # if player.bone_count >= 5:
+        #     if keys[pygame.K_SPACE]:
+        #         player.shoot()
+
+        # explode bomb
+        if bomb_cooldown == 0:
+            if keys[pygame.K_f]:
+                bomb_cooldown = 2*fps #2 sec cooldown for bombs
+                if bomb_count > 0:
+                    bomb_count -= 1
+                    for enemy in enemy_list:
+                        if 0 <= enemy.x and 0 <= enemy.y:
+                            enemy.ship_img = EMPTY
+                            enemy.mask = pygame.mask.from_surface(enemy.ship_img)
+                            # score += 1 - dont think bombs should give you score
+        if bomb_cooldown > 0:
+            bomb_cooldown -= 1
+
+        # remove shield
+        if player.shield_health <= 0:
+            player.deshield()
 
         # enemy behavior
         for enemy in enemy_list:
