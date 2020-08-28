@@ -1,0 +1,19 @@
+HOW TO PLAY
+
+
+
+Shoot the UFOS to increase your score!
+
+Don't let them get past the bottom of
+the screen or you'll lose a lifepoint!
+
+If you get hit by an enemy projectile or
+crash into an enemy ship you will lose health!
+
+Use 'W' 'A' 'S' 'D' keys to move the ship.
+
+Tap or hold the space bar to shoot.
+
+If you have bombs, press 'F' to use a bomb (2 sec cooldown).
+
+Look out for these useful power ups to help you on your adventure!

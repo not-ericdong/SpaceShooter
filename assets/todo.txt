@@ -7,12 +7,12 @@ score - DONE
 fix projectile being destroyed when ship is destroyed - DONE
 
 scrolling background - DONE
-
+ 
 make ships spawn in two diff sizes - DONE
 
+FIX AMMO placement - DONE
+
 add bone power up that does???? maybe make you shoot faster or more bullets -DONE
-	spawns randomly each level but theres a counter
-	if counter = 4 then 100% spawn this lvl
 
 add lives that spawns randomly each level but has a counter as well - fully heals you -DONE
 
@@ -23,13 +23,11 @@ shield power up - DONE
 
 
 
-main menu controls page - add a play button then
+main menu controls page - add a play button then - Done
 
-maybe make lives UI hearts instead of numbers
 
-boss fight?????
+bomb use need an animation .... 
 
-FIX AMMO placement - DONE
 
 
 
@@ -39,10 +37,10 @@ powerups
 -once a new level starts 25% chance to spawn or smthn
 -have a counter, if counter reaches N then 100% spawn rate
 -spawn powerup amonst ships
--create class that takes x, y, which_power, powerimg
+-create class that takes x, y, powerimg
 	class should have move method similar to projectile
 	collision detection
-	powerup methods?
+	
 
 
 
