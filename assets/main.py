@@ -2,7 +2,6 @@ from PIL import Image, ImageDraw
 import random
 import os
 import pygame
-import time
 
 # pygame setup
 pygame.font.init()
@@ -443,7 +442,7 @@ def main():
         if player.bone_count == 4:
             player.projectile_img = PROJECTILE_BIG
 
-        # explode bomb todo add animation to bomb explosion
+        # explode bomb
         if bomb_cooldown == 0:
             if keys[pygame.K_f]:
                 bomb_cooldown = 2*fps  # 2 sec cooldown for bombs
@@ -451,12 +450,13 @@ def main():
                     bomb_count -= 1
                     for enemy in enemy_list:
                         if 0 <= enemy.x and 0 <= enemy.y:
-                            for explode in EXPLOSION:
-                                enemy.ship_img = explode
-                                redraw_window()
-                                pygame.time.wait(10)
-                            enemy.ship_img = EMPTY
-                            enemy.mask = pygame.mask.from_surface(enemy.ship_img)
+                            if enemy.ship_img != EMPTY:
+                                for explode in EXPLOSION:
+                                    enemy.ship_img = explode
+                                    redraw_window()
+                                    pygame.time.wait(2)
+                                enemy.ship_img = EMPTY
+                                enemy.mask = pygame.mask.from_surface(enemy.ship_img)
         elif bomb_cooldown > 0:
             bomb_cooldown -= 1
 
@@ -608,3 +608,4 @@ def main_menu():
 
 
 main_menu()
+# todo add virtual environment
