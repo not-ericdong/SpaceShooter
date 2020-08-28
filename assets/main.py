@@ -10,11 +10,12 @@ game_display_window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("APOLLO ADVENTURE")
 assets = os.path.dirname(__file__)
 bg_filename = os.path.join(assets, 'background.jpg')
+bg_filename1 = os.path.join(assets, 'background1.jpg')
 
 
 # background generator
-def create_background():
-    space = Image.new("RGB", (WIDTH, HEIGHT+10), "black")
+def create_background(file_path):
+    space = Image.new("RGB", (WIDTH, HEIGHT + 10), "black")
     d = ImageDraw.Draw(space)
 
     star_number = random.randrange(100, 260, 10)
@@ -35,10 +36,11 @@ def create_background():
                         3 * size + offsetx, 2 * size + offsety], fill=colour)
             d.rectangle([size + offsetx, offsety,
                         2 * size + offsetx, 3 * size + offsety], fill=colour)
-    space.save(bg_filename)
+    space.save(file_path)
 
 
-create_background()
+create_background(bg_filename)
+create_background(bg_filename1)
 
 # Load the images
 SPACESHIP = pygame.image.load(os.path.join(assets, "spaceship_s.png"))
@@ -63,18 +65,15 @@ POWERUP_SHIELD = pygame.image.load(os.path.join(assets, "shield.png"))
 FORCEFIELD = pygame.image.load(os.path.join(assets, "force_field_small.png"))
 
 EXPLOSION1 = pygame.image.load(os.path.join(assets, "explosion(half)1.png"))
-EXPLOSION2 = pygame.image.load(os.path.join(assets, "explosion(half)2.png"))
-EXPLOSION3 = pygame.image.load(os.path.join(assets, "explosion(half)3.png"))
 EXPLOSION4 = pygame.image.load(os.path.join(assets, "explosion(half)4.png"))
 EXPLOSION5 = pygame.image.load(os.path.join(assets, "explosion(half)5.png"))
-EXPLOSION6 = pygame.image.load(os.path.join(assets, "explosion(half)6.png"))
-EXPLOSION7 = pygame.image.load(os.path.join(assets, "explosion(half)7.png"))
 EXPLOSION8 = pygame.image.load(os.path.join(assets, "explosion(half)8.png"))
 EXPLOSION9 = pygame.image.load(os.path.join(assets, "explosion(half)9.png"))
-EXPLOSION = [EXPLOSION1, EXPLOSION2, EXPLOSION3, EXPLOSION4, EXPLOSION5, EXPLOSION6, EXPLOSION7, EXPLOSION8, EXPLOSION9]
+EXPLOSION = [EXPLOSION1, EXPLOSION4, EXPLOSION5, EXPLOSION8, EXPLOSION9]
 
 EMPTY = pygame.image.load(os.path.join(assets, "empty.png"))
 BACKGROUND = pygame.image.load(bg_filename)
+BACKGROUND1 = pygame.image.load(bg_filename1)
 
 
 class Projectile:
@@ -148,7 +147,7 @@ class Ship:
 
     def shoot(self):
         if self.cool_down == 0:
-            if self.bone_count >= 5:
+            if self.bone_count >= 4:
                 projectile = Projectile(self.x + self.get_width()/2 + 20,
                                         self.y, self.projectile_img)
                 projectile1 = Projectile(self.x + self.get_width()/2 - 20,
@@ -209,13 +208,13 @@ class Player1(Ship):
         self.health_bar(window)
 
     def health_bar(self, window):
-        pygame.draw.rect(window, (255, 0, 0), (self.x, self.y + self.ship_img.get_height()+10,
+        pygame.draw.rect(window, (255, 0, 0), (self.x, self.y + self.ship_img.get_height() + 10,
                                                self.ship_img.get_width(), 5))
         if self.health <= 0:
             pygame.draw.rect(window, (255, 0, 0), (self.x, self.y + self.ship_img.get_height() + 10,
                                                    self.ship_img.get_width(), 5))
         else:
-            pygame.draw.rect(window, (0, 255, 0), (self.x, self.y + self.ship_img.get_height()+10,
+            pygame.draw.rect(window, (0, 255, 0), (self.x, self.y + self.ship_img.get_height() + 10,
                                                    (self.health/self.max_health) * self.ship_img.get_width(), 5))
 
 
@@ -240,7 +239,6 @@ class EnemyShip(Ship):
         self.y += vel
         # if 0 < self.x+self.get_width() < WIDTH:
         #     self.x += random.choice([-5, 5, 10, -10])
-
 
     def shoot(self):   # added child shoot method since projectiles for ufos shoot from under
         if self.cool_down == 0:
@@ -273,7 +271,7 @@ class Background:
         window.blit(self.bg, (self.x, self.y))
 
     def move(self):
-        self.y += 1  # todo change this value at the end
+        self.y += 0.3  # todo change this value at the end
 
 
 def main():
@@ -355,7 +353,7 @@ def main():
 
             moving_background_bottom = moving_background_top  # todo background are always the same
                                                               #     - might have to make two background imgs
-            create_background()
+            create_background(bg_filename)
             moving_background_top = Background(-HEIGHT-10, BACKGROUND)
 
 
@@ -369,7 +367,7 @@ def main():
         if lost:
             if lost_count > fps*2:
                 run = False
-            else:  # todo maybe change this to click to esc
+            else:
                 continue
 
         # click X to exit program
@@ -397,15 +395,15 @@ def main():
             wave_length += 3
             for n in range(wave_length):
                 enemy = EnemyShip(random.randrange(10, WIDTH-200),
-                                  random.randrange(-600, -100),
+                                  random.randrange(-1000+level*50, -100),
                                   random.choice(["purple", "blue", "pink", "orange",
                                                  "purple_s", "blue_s", "pink_s", "orange_s"])
                                   )
                 enemy_list.append(enemy)
 
-            # powerup spawning - todo balance later
+            # powerup spawning - todo balance later - maybe spawn multiple powerups per level
             def power_spawn_rules():
-                if player.bone_count >= 6:
+                if player.bone_count >= 5:
                     return random.choice([POWERUP_HEART, POWERUP_BOMB, POWERUP_SHIELD])
                 if level < 2 or player.health == player.max_health:
                     return random.choice([POWERUP_BONE, POWERUP_BOMB, POWERUP_SHIELD])
@@ -439,7 +437,7 @@ def main():
             elif powerup.y > HEIGHT:
                 power_list.remove(powerup)
         # bones
-        if player.bone_count == 4:
+        if player.bone_count == 3:
             player.projectile_img = PROJECTILE_BIG
 
         # explode bomb
@@ -454,7 +452,7 @@ def main():
                                 for explode in EXPLOSION:
                                     enemy.ship_img = explode
                                     redraw_window()
-                                    pygame.time.wait(2)
+                                    pygame.time.wait(1)  # todo tweek this
                                 enemy.ship_img = EMPTY
                                 enemy.mask = pygame.mask.from_surface(enemy.ship_img)
         elif bomb_cooldown > 0:
@@ -608,4 +606,3 @@ def main_menu():
 
 
 main_menu()
-# todo add virtual environment
