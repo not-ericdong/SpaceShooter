@@ -271,7 +271,7 @@ class Background:
         window.blit(self.bg, (self.x, self.y))
 
     def move(self):
-        self.y += 0.3  # todo change this value at the end
+        self.y += 0.5  # todo change this value at the end
 
 
 def main():
