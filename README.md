@@ -7,9 +7,12 @@ Current features include controllable player ship, menu options, randomly spawne
 ![](img/example.PNG)
 
 **How to play on your computer:**
-Download the file from this repository
-Make sure Python 3 is installed
-
+1. Clone this repository to desired folder on your computer
+2. Make sure Python 3 is installed
+3. * For Windows users run 'pip install pygame' and 'pip install pillow'
+   * For Mac and Linux users run 'python3 pip install pygame' and 'python3 pip install pillow'
+4. * For Windows users run '\path\to\folder\SpaceShooter\assets\main.py' in the command line
+   * For Mac and Linux users run 'python ~/SpaceShooter/assets/main.py' in te command line
 
 Try to beat my highscore of 946!
 
