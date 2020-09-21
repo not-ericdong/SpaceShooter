@@ -8,7 +8,8 @@ pygame.font.init()
 WIDTH, HEIGHT = 600, 900
 game_display_window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("APOLLO ADVENTURE")
-assets = os.path.dirname(__file__)
+current_path = os.path.dirname(__file__)
+assets = os.path.join(current_path, "assets/")
 bg_filename = os.path.join(assets, 'background.jpg')
 bg_filename1 = os.path.join(assets, 'background1.jpg')
 
