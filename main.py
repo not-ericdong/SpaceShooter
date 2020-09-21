@@ -238,8 +238,6 @@ class EnemyShip(Ship):
 
     def move(self, vel):  # todo add x movement random
         self.y += vel
-        # if 0 < self.x+self.get_width() < WIDTH:
-        #     self.x += random.choice([-5, 5, 10, -10])
 
     def shoot(self):   # added child shoot method since projectiles for ufos shoot from under
         if self.cool_down == 0:
